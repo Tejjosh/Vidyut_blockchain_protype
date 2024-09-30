@@ -1,0 +1,93 @@
+import pandas as pd
+from web3 import Web3
+import json
+import sqlite3
+from datetime import datetime
+
+# Connect to Ethereum blockchain
+INFURA_URL = 'https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID'
+web3 = Web3(Web3.HTTPProvider(INFURA_URL))
+
+if web3.isConnected():
+    print("Connected to Ethereum mainnet")
+else:
+    print("Connection failed")
+
+# Create an SQLite database for data storage
+conn = sqlite3.connect('blockchain_data.db')
+c = conn.cursor()
+
+# Create a table to store transaction data
+c.execute('''
+    CREATE TABLE IF NOT EXISTS transactions (
+        block_number INTEGER,
+        transaction_hash TEXT,
+        from_address TEXT,
+        to_address TEXT,
+        value REAL,
+        gas INTEGER,
+        gas_price REAL,
+        timestamp TEXT
+    )
+''')
+
+conn.commit()
+
+# Function to fetch transactions from a block and store them
+def fetch_and_store_transactions(block_number):
+    block = web3.eth.getBlock(block_number, full_transactions=True)
+    transactions = block['transactions']
+    
+    for tx in transactions:
+        tx_hash = tx['hash'].hex()
+        from_address = tx['from']
+        to_address = tx['to'] if tx['to'] else "Contract Creation"
+        value = web3.fromWei(tx['value'], 'ether')
+        gas = tx['gas']
+        gas_price = web3.fromWei(tx['gasPrice'], 'gwei')
+        timestamp = datetime.utcfromtimestamp(block['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+
+        c.execute('''
+            INSERT INTO transactions (block_number, transaction_hash, from_address, to_address, value, gas, gas_price, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (block_number, tx_hash, from_address, to_address, value, gas, gas_price, timestamp))
+    
+    conn.commit()
+
+# Example: Fetch the latest block and store its transactions
+latest_block = web3.eth.blockNumber
+fetch_and_store_transactions(latest_block)
+
+# Aggregating Data - Example: Group by 'from_address' and calculate total Ether sent
+def aggregate_data():
+    query = '''
+    SELECT from_address, SUM(value) as total_sent
+    FROM transactions
+    GROUP BY from_address
+    ORDER BY total_sent DESC
+    '''
+    
+    df = pd.read_sql(query, conn)
+    print(df.head())
+
+# Perform data aggregation and analysis
+aggregate_data()
+
+# Fetch multiple blocks and analyze
+for block_number in range(latest_block - 10, latest_block):  # Fetch the last 10 blocks
+    fetch_and_store_transactions(block_number)
+
+# Analysis Example: Average Gas Price
+def analyze_gas_prices():
+    query = '''
+    SELECT AVG(gas_price) as avg_gas_price
+    FROM transactions
+    '''
+    
+    df = pd.read_sql(query, conn)
+    print(f"Average Gas Price (in Gwei): {df['avg_gas_price'].values[0]}")
+
+analyze_gas_prices()
+
+# Close the database connection when done
+conn.close()
