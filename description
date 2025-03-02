@@ -1,0 +1,137 @@
+Introduction
+
+This Python script connects to the Ethereum blockchain using the Web3.py library and extracts transaction data from recent blocks. It stores this data in an SQLite database and performs analytical queries to understand transaction patterns. The script provides insights into total Ether sent by different addresses and calculates the average gas price.
+
+
+---
+
+1. Objective
+
+The primary goal of this script is to:
+
+Connect to the Ethereum blockchain using Infura.
+
+Fetch transaction data from recent Ethereum blocks.
+
+Store the transactions in an SQLite database.
+
+Perform data aggregation and analysis, such as calculating total Ether sent and average gas prices.
+
+
+
+---
+
+2. Proposed Work
+
+The script follows a structured approach to achieve its objectives:
+
+Step 1: Connect to Ethereum Blockchain
+
+The script connects to Ethereum’s mainnet using Infura (a blockchain infrastructure provider).
+
+Web3.HTTPProvider(INFURA_URL) is used to establish this connection.
+
+
+Step 2: Create and Configure SQLite Database
+
+The script creates a database (blockchain_data.db) to store transaction details.
+
+A table named transactions is created with columns such as block number, transaction hash, from address, to address, value, gas, gas price, and timestamp.
+
+
+Step 3: Fetch Transactions from a Block
+
+The function fetch_and_store_transactions(block_number) retrieves all transactions from a given block and inserts them into the database.
+
+It extracts details such as:
+
+Transaction hash
+
+From and To addresses (If to is None, it means a contract creation transaction)
+
+Transaction value (in Ether)
+
+Gas used and gas price (in Gwei)
+
+Timestamp
+
+
+
+Step 4: Store Data in the Database
+
+The extracted transaction data is inserted into the SQLite database.
+
+
+Step 5: Perform Data Analysis
+
+The script runs SQL queries on the database using pandas to analyze transaction patterns.
+
+Example Analysis:
+
+Aggregates transactions by from_address to calculate the total Ether sent by each address.
+
+Computes the average gas price of all stored transactions.
+
+
+
+Step 6: Process Multiple Blocks
+
+The script loops through the last 10 blocks and fetches their transaction data.
+
+
+
+---
+
+3. Conclusion
+
+This script serves as a basic blockchain analytics tool that helps in extracting, storing, and analyzing Ethereum transactions. It demonstrates how to:
+
+Use Web3.py to interact with the Ethereum blockchain.
+
+Store Ethereum transaction data efficiently using SQLite.
+
+Perform data aggregation and analysis using SQL and pandas.
+
+
+With modifications, this script can be used for advanced blockchain research, DeFi analysis, or transaction monitoring.
+
+
+---
+
+How to Execute the Script
+
+Step 1: Install Dependencies
+
+Ensure you have the necessary Python libraries installed:
+
+pip install web3 pandas sqlite3 datetime
+
+Step 2: Replace the Infura API Key
+
+Update INFURA_URL with your actual Infura project ID:
+
+
+INFURA_URL = 'https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID'
+
+You can get an Infura API key by signing up at Infura.
+
+
+Step 3: Run the Script
+
+Execute the script using:
+
+python script.py
+
+Expected Output
+
+It should print "Connected to Ethereum mainnet".
+
+Transaction data will be stored in blockchain_data.db.
+
+Aggregation results will be displayed, showing the top addresses by Ether sent.
+
+The average gas price will be printed.
+
+
+This script can be expanded for real-time transaction tracking, fraud detection, or Ethereum analytics.
+
